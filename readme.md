@@ -1,8 +1,11 @@
-# ipmap
-ipmap is a tool to plot unauthorized access attempts from your `auth.log` on a
-map.
+# ipmap 🗺️📍
+![ipmap screenshot](screenshot.png)
+
+
+_Plot your auth.log access attempts on a map of the world. Hopefully someday it will become a fullblown threat intelligence tool. But that won't be overnight._
 
 ## To-Do: 
+- Documentation
 - Tests
 - CI/CD
 - Use sqlite 
