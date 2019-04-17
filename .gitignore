@@ -2,3 +2,4 @@
 venv
 auth.log
 *.html
+__pycache__/

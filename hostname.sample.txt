@@ -1,0 +1,19 @@
+# https://github.com/ejrv/VPNs/
+vlus-af1.pointtoserver.com	
+al1.pointtoserver.com	
+vlus-dz1.pointtoserver.com	
+vlus-ao1.pointtoserver.com	
+vlus-ar1.pointtoserver.com	
+vleu-am1.pointtoserver.com	
+aw1.pointtoserver.com	
+au-me1.pointtoserver.com	
+au-bn.pointtoserver.com	
+au-sd1.pointtoserver.com	
+au-pe1.pointtoserver.com	
+at1.pointtoserver.com	
+az1.pointtoserver.com	
+bs1.pointtoserver.com	
+bh.pointtoserver.com	
+vlus-bd1.pointtoserver.com	
+vleu-bb.pointtoserver.com	
+vleu-be1.pointtoserver.com	
