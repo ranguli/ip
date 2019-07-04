@@ -2,7 +2,6 @@
 from datetime import datetime
 import csv
 
-
 class LogDigester:
     """ Simple class for processing log data into csv records """
 
