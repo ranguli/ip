@@ -11,7 +11,7 @@ class LogDigester:
         
         with open(logfile) as f:
             for line in f:
-                if "Disconnecting" in line:
+                if "Disconnected" in line or  "Invalid user" in line:
                     line = line.split()
                     month = line[0]
                     day  = line[1].zfill(2)
@@ -33,4 +33,4 @@ class LogDigester:
                 writer.writerow(record)
 
 logdigester = LogDigester()
-logdigester.auth_log_to_csv("auth.log", "out.csv")
+logdigester.auth_log_to_csv("auth.log.example", "auth.csv.example")
