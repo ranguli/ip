@@ -13,9 +13,14 @@ It may look like: 1835841,en,AS,Asia,KR,"South Korea",0
 This script simple merges the two together into one unified .csv file.
 """
 
+
+"""
+The GeoLite2 Country and City databases are updated on the first Tuesday of
+each month. The GeoLite2 ASN database is updated every Tuesday.
+"""
 import os
 import sqlite3
-
+import common
 from tqdm import tqdm
 
 city_locations_csv = "GeoLite2-City-Locations-en.csv"
@@ -23,36 +28,8 @@ city_blocks_csv = "GeoLite2-City-Blocks-IPv4.csv"
 asn_blocks_csv = "GeoLite2-ASN-Blocks-IPv4.csv"
 db_file = "db.sqlite"
 
-# Boilerplate SQL query to create our table
-geolocation_table_sql = """ CREATE TABLE IF NOT EXISTS geolocation (
-                                ip_range text NOT NULL,
-                                continent_code text,
-                                continent_name text,
-                                country_code text,
-                                country_name text,
-                                region_code text,
-                                region_name text,
-                                city_name,
-                                asn text,
-                                time_zone text,
-                                postal_code text,
-                                latitude text,
-                                longitude text,
-                                accuracy text
-                            ); """
-
-try:
-    if not os.path.exists(db_file):
-        with open(db_file, 'w'): 
-            pass
-    conn = sqlite3.connect(db_file)
-    conn.text_factory = str
-except Error as e:
-    print(e)
-
-if conn is not None:
-    c = conn.cursor()
-    c.execute(geolocation_table_sql)
+c = common.connect_db(db_file)
+common.create_geolocation_table(c)
 
 # Create a lookup table for GeoIDs.
 print("Creating GeoID lookup table ...")
@@ -119,7 +96,6 @@ with open(city_blocks_csv) as city_blocks_file:
             asn = asn_data.get(ip_range)
 
             # Write this all out to SQL
-            #geo_data = [i.replace('"', '') for i in geo_data]
 
             results.append([ip_range, continent_code, continent_name,
                             country_code, country_name, region_code, region_name,
@@ -129,7 +105,7 @@ with open(city_blocks_csv) as city_blocks_file:
             i += 1
            
             # Commit chunks of 5k records at a time. This increases the speed *significantly*
-            # to roughly 500,000 insertions/m. Not bad.
+            # to roughly 100,000 insertions/s. Not bad.
             if i == 5000:
                 c.execute("BEGIN TRANSACTION")
                 for result in results:
