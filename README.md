@@ -1,2 +1,0 @@
-# ip
-watch those logs
