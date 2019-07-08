@@ -67,16 +67,29 @@ def connect_db(db_file):
     return connection 
 
 def init_db(conn): 
-    """ Creates all the necessary database tables """
+    """ Creates all the necessary database table"""
    
-    attack_table = """ CREATE TABLE IF NOT EXISTS attack_log (
-                                session text,
-                                src_ip text,
-                                timestamp text,
-                                event_id text 
-                              );"""
+    create_table= """CREATE TABLE IF NOT EXISTS attack_log(
+                             session text,
+                             src_ip text,
+                             asn text,
+                             timestamp text,
+                             country_code text,
+                             country_name text, 
+                             subdivision_name text,
+                             subdivision_code text, 
+                             city_name text,
+                             postal_code text, 
+                             continent_name text,
+                             continent_code text, 
+                             latitude text, 
+                             longitude text,
+                             timezone text, 
+                             accuracy_radius text, 
+                             event_id text
+                            );"""
     
     c = conn.cursor()
-    c.execute(attack_table)
+    c.execute(create_table)
     conn.commit()
 
