@@ -4,6 +4,8 @@ from netaddr import IPNetwork, IPAddress
 import sqlite3 
 from tqdm import tqdm
 
+import maxminddb
+
 from ctypes import * 
 import argparse
 import common
@@ -121,7 +123,8 @@ def process_log(conn, jsonlog):
     
     count = 0
     results = []
-    
+  
+    reader = maxminddb.open_database('GeoLite2-City.mmdb')
     with open(jsonlog) as workload:
         c.execute("BEGIN TRANSACTION")
 
@@ -133,7 +136,8 @@ def process_log(conn, jsonlog):
                 session = record.get('session')
                 src_ip = record.get('src_ip')
                 timestamp = record.get('timestamp')
-                geolocation = common.geolocate(conn, src_ip)
+                geolocation = reader.get(src_ip)
+                print(geolocation)
                 result = [session, src_ip, timestamp, event_id]
                 results.append(result)
                         
@@ -147,8 +151,6 @@ def process_log(conn, jsonlog):
                     conn.commit()
                     count = 0
                     results = []
-        
-    c.execute("END TRANSACTION")
 
     conn.commit()
     c.close()
@@ -173,11 +175,13 @@ if __name__ == '__main__':
 
     #logs = os.listdir(common.COWRIE_LOG_DIR)
     #sessions = common.get_session_ids(logs)
+    
     conn = common.connect_db(common.DB_FILE)
     
     common.init_db(conn)
-    import_geolite2(conn)
+    #import_geolite2(conn)
     
+    #query = load_geolocation()
     process_log(conn, common.JSONLOG) 
     
     # Get all unique session IDs, as a way to identify data across pools 

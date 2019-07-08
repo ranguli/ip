@@ -56,29 +56,6 @@ def get_session_ids(logs):
                     sessions[session] = "" 
     return sessions
 
-def geolocate(conn, ip):
-    """ Queries the GeoLite2 table in SQLite for information on
-        an IP address.
-    """
-
-    cache = {} 
-
-    c = conn.cursor()
-
-    first_octet = ip.split(".")[0]
-    # Select all IP ranges that start with the first octet of our IP
-    query = c.execute("SELECT * FROM geolocation WHERE ip_range LIKE '" + first_octet +"%'")
-   
-    if cache.get(ip):
-        return cache.get(ip)
-   
-    for result in query:
-        if IPAddress(ip) in IPNetwork(result[0]):
-            if result not in cache:
-                cache[ip] = result
-            return(result)
-            break
-
 def connect_db(db_file):
     """ Connects to SQLite database """
 
@@ -91,25 +68,6 @@ def connect_db(db_file):
 
 def init_db(conn): 
     """ Creates all the necessary database tables """
-
-    tables = []
-
-    geolocation_table = """ CREATE TABLE IF NOT EXISTS geolocation (
-                                    ip_range text NOT NULL,
-                                    continent_code text,
-                                    continent_name text,
-                                    country_code text,
-                                    country_name text,
-                                    region_code text,
-                                    region_name text,
-                                    city_name text,
-                                    asn text,
-                                    time_zone text,
-                                    postal_code text,
-                                    latitude text,
-                                    longitude text,
-                                    accuracy text
-                                ); """
    
     attack_table = """ CREATE TABLE IF NOT EXISTS attack_log (
                                 session text,
@@ -118,13 +76,7 @@ def init_db(conn):
                                 event_id text 
                               );"""
     
-    tables.append(geolocation_table) 
-    tables.append(attack_table) 
-
     c = conn.cursor()
-
-    for table in tables:
-        c.execute(table)
-
+    c.execute(attack_table)
     conn.commit()
 
