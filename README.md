@@ -1,5 +1,5 @@
 # ip
-[!screenshot](screenshot.png)
+![screenshot](screenshot.png)
 
 ## Features:
 - Parses Cowrie honeypot `json` logs into `sqlite` at roughly `20,000
