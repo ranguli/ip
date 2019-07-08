@@ -1,26 +1,103 @@
-import sqlite3
+import sqlite3 
 import os
 
 from netaddr import IPAddress, IPNetwork
 
-def geolocate(ip, c):
-    c.execute('SELECT * FROM geolocation') 
-    for row in c:
-        if IPAddress(ip) in IPNetwork(row[0]):
-            print(row) 
+
+CITY_LOCATIONS_CSV = "GeoLite2-City-Locations-en.csv"
+CITY_BLOCKS_CSV = "GeoLite2-City-Blocks-IPv4.csv"
+ASN_BLOCKS_CSV = "GeoLite2-ASN-Blocks-IPv4.csv"
+
+COWRIE_LOG_DIR = "cowrie/"
+DB_FILE = "db.sqlite"
+
+def log_length(log):
+    """ Gets the length of a logfile """
+    i = 0
+    with open(jsonlog) as f:
+        for line in f:
+            i += 1
+
+    f.close()
+    return i 
+
+def chunk(jsonlog, chunk_count):
+    """ Divides a file into equal sized chunks. 
+        Useful for dividing logs up for multiprocessing 
+    """
+    chunks = [] 
+    
+    length = log_length(jsonlog)
+    print(length)
+    chunk_size = length // chunk_count
+    print(chunk_size)
+
+    with open(jsonlog) as f:
+        i = 0 
+        chunk = 0
+        for line in f: 
+            chunks.append(line)
+            if i == chunk_size:
+                chunk += 1
+                i = 0
+            i += 1 
+    f.close()
+
+    return chunks
+
+def get_session_ids(logs):
+    """ Parses a cowrie json log and gets all unique session IDs """
+
+    sessions = {} 
+    for log in logs:
+        with open(log) as f:
+            for line in f:
+                record = json.loads(line)
+                session = record.get("session")
+                if session not in sessions:
+                    sessions[session] = "" 
+    return sessions
+
+def geolocate(c, ip):
+    """ Queries the GeoLite2 table in SQLite for information on
+        an IP address.
+    """
+
+    cache = {} 
+
+    c = conn.cursor()
+    query = c.execute('SELECT * FROM geolocation') 
+   
+    print(cache.get(ip))
+    if cache.get(ip):
+        print("got it from catch")
+        return cache.get(ip)
+   
+    for result in query:
+        if IPAddress(ip) in IPNetwork(result[0]):
+            print("got it")
+            if result not in cache:
+                cache[ip] = result
+                print(result)
+            return(result)
             break
 
 def connect_db(db_file):
-    if not os.path.exists(db_file):
-        with open(db_file, 'w'): 
-            pass
-    conn = sqlite3.connect(db_file)
-    conn.text_factory = str
-    if conn is not None:
-        return(conn.cursor())
+    """ Connects to SQLite database """
 
-def create_geolocation_table(c): 
-    geolocation_table_sql = """ CREATE TABLE IF NOT EXISTS geolocation (
+    connection = None
+    try:
+        connection = sqlite3.connect(db_file)
+    except (Exception, sqlite3.Error) as error:
+        print(error)
+    return connection 
+
+def init_db(conn): 
+    """ Creates all the necessary database tables """
+
+    tables = []
+
+    geolocation_table = """ CREATE TABLE IF NOT EXISTS geolocation (
                                     ip_range text NOT NULL,
                                     continent_code text,
                                     continent_name text,
@@ -28,7 +105,7 @@ def create_geolocation_table(c):
                                     country_name text,
                                     region_code text,
                                     region_name text,
-                                    city_name,
+                                    city_name text,
                                     asn text,
                                     time_zone text,
                                     postal_code text,
@@ -36,5 +113,21 @@ def create_geolocation_table(c):
                                     longitude text,
                                     accuracy text
                                 ); """
-    c.execute(geolocation_table_sql)
+   
+    attack_table = """ CREATE TABLE IF NOT EXISTS attack_log (
+                                session text,
+                                src_ip text,
+                                timestamp text,
+                                event_id text 
+                              );"""
+    
+    tables.append(geolocation_table) 
+    tables.append(attack_table) 
+
+    c = conn.cursor()
+
+    for table in tables:
+        c.execute(table)
+
+    conn.commit()
 
