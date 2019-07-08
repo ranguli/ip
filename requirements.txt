@@ -1,2 +1,4 @@
+black==19.3b0
+maxminddb==1.4.1
 netaddr==0.7.19
 tqdm==4.32.2

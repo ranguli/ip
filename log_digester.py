@@ -5,12 +5,11 @@ from tqdm import tqdm
 import sqlite3
 import maxminddb
 
-from ctypes import *
 import argparse
 import common
 import json
 import os
-import re
+
 
 def process_log(conn, log_dir, jsonlog):
     c = conn.cursor()
@@ -19,9 +18,9 @@ def process_log(conn, log_dir, jsonlog):
     updated_entries = []
     new_entries = []
 
-    geolite_city = maxminddb.open_database("GeoLite2-City.mmdb")
-    geolite_asn = maxminddb.open_database("GeoLite2-ASN.mmdb")
-    
+    geolite_city = maxminddb.open_database(common.GEOLITE2_CITY)
+    geolite_asn = maxminddb.open_database(common.GETOLITE2_ASN)
+
     with open(log_dir + jsonlog) as workload:
         seen = []
         c.execute("BEGIN TRANSACTION")
@@ -30,35 +29,44 @@ def process_log(conn, log_dir, jsonlog):
             record = json.loads(line)
             event_id = record.get("eventid")
 
-            if (event_id == "cowrie.login.success") or (event_id == "cowrie.login.failed"):
+            if (event_id == "cowrie.login.success") or (
+                event_id == "cowrie.login.failed"
+            ):
 
                 src_ip = record.get("src_ip")
-                exists = c.execute("SELECT count(*) FROM attack_log WHERE src_ip=?", 
-                        (src_ip,)).fetchall()[0][0]
+                exists = c.execute(
+                    "SELECT count(*) FROM attack_log WHERE src_ip=?", (src_ip,)
+                ).fetchall()[0][0]
 
                 # If the IP already exists, just update its timestamp attributes
                 if (exists > 0) and (src_ip not in seen):
-                    attack_count = c.execute("SELECT attack_count FROM attack_log WHERE src_ip=?", (src_ip,))
-                    c.execute("UPDATE attack_log SET attack_count = attack_count + 1 WHERE src_ip=?", (src_ip,))
-
-
+                    attack_count = c.execute(
+                        "SELECT attack_count FROM attack_log WHERE src_ip=?", (src_ip,)
+                    )
+                    c.execute(
+                        "UPDATE attack_log SET attack_count = attack_count + 1 WHERE src_ip=?",
+                        (src_ip,),
+                    )
 
                     timestamp = record.get("timestamp")
-                    #print(timestamp)
+                    # print(timestamp)
                     # Get all existing timestamps in the DB for a particular IP
-                    timestamps = c.execute("SELECT timestamps FROM attack_log \
-                            WHERE src_ip=?", (src_ip,)).fetchall()
+                    timestamps = c.execute(
+                        "SELECT timestamps FROM attack_log \
+                            WHERE src_ip=?",
+                        (src_ip,),
+                    ).fetchall()
 
-                    timestamps = [(''.join(timestamps[0]))]
+                    timestamps = [("".join(timestamps[0]))]
                     timestamps.append(timestamp + ",")
-                    
+
                     first_seen = timestamps[0].split(",")[0]
                     last_seen = timestamps[-1]
                     attack_count = len(timestamps[0].split(","))
-                    
+
                     # Format our results back into a string so we can insert it into
-                    # sqlite 
-                    
+                    # sqlite
+
                     update_statement = """ UPDATE attack_log SET 
                                             timestamps=?,
                                             first_seen=?,
@@ -66,17 +74,25 @@ def process_log(conn, log_dir, jsonlog):
                                             attack_count=?
                                             WHERE src_ip=?
                                    """
-                    
-                    c.execute(update_statement, ["".join(timestamps), first_seen,
-                        last_seen, attack_count, src_ip])
+
+                    c.execute(
+                        update_statement,
+                        [
+                            "".join(timestamps),
+                            first_seen,
+                            last_seen,
+                            attack_count,
+                            src_ip,
+                        ],
+                    )
                     timestamps = None
-                    
+
                 elif exists == 0:
                     seen.append(src_ip)
                     timestamp = record.get("timestamp") + ","
 
                     geolocation = geolite_city.get(src_ip)
-                    
+
                     asn_location = geolite_asn.get(src_ip)
                     asn = asn_location.get("autonomous_system_organization")
 
@@ -93,7 +109,9 @@ def process_log(conn, log_dir, jsonlog):
                     try:
                         subdivision_name = geolocation.get("subdivisions")
                         if subdivision_name is not None:
-                            subdivision_name = subdivision_name[0].get("names").get("en")
+                            subdivision_name = (
+                                subdivision_name[0].get("names").get("en")
+                            )
                     except AttributeError:
                         continue
 
@@ -120,7 +138,9 @@ def process_log(conn, log_dir, jsonlog):
                         continue
 
                     try:
-                        continent_code = geolocation.get("continent").get("names").get("en")
+                        continent_code = (
+                            geolocation.get("continent").get("names").get("en")
+                        )
                     except AttributeError:
                         continue
 
@@ -140,7 +160,9 @@ def process_log(conn, log_dir, jsonlog):
                         continue
 
                     try:
-                        accuracy_radius = geolocation.get("location").get("accuracy_radius")
+                        accuracy_radius = geolocation.get("location").get(
+                            "accuracy_radius"
+                        )
                     except AttributeError:
                         continue
 
@@ -149,7 +171,7 @@ def process_log(conn, log_dir, jsonlog):
                     except AttributeError:
                         continue
 
-                    new_entry= [
+                    new_entry = [
                         src_ip,
                         asn,
                         timestamp,
@@ -177,17 +199,28 @@ def process_log(conn, log_dir, jsonlog):
                                              continent_code, latitude, longitude,
                                              time_zone, accuracy_radius, event_id) 
                                              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
-                
+
                     c.execute(insertion_statement, new_entry)
         conn.commit()
+
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="ip")
-    parser.add_argument("--logdir", metavar="D", type=str, nargs="+",
-           help="The number of CPU cores for multicore workload")
-    parser.add_argument("--cores", metavar="C", type=int, default=1,
-           help="The number of CPU cores for multicore workload")
+    parser.add_argument(
+        "--logdir",
+        metavar="D",
+        type=str,
+        nargs="+",
+        help="The number of CPU cores for multicore workload",
+    )
+    parser.add_argument(
+        "--cores",
+        metavar="C",
+        type=int,
+        default=1,
+        help="The number of CPU cores for multicore workload",
+    )
     args = parser.parse_args()
 
     if args.cores is not None:
@@ -205,7 +238,9 @@ if __name__ == "__main__":
     logs = os.listdir(common.COWRIE_LOG_DIR)
     for index, log in enumerate(logs):
         index += 1
-        print("(" + str(index) + "/" + str(len(logs)) + ") Processing logfile " + log + " ...")
+        print(
+            "(" + str(index) + str(len(logs)) + ") Processing logfile " + log + " ..."
+        )
         process_log(conn, common.COWRIE_LOG_DIR, log)
 
     conn.close()

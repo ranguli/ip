@@ -5,8 +5,8 @@ from netaddr import IPAddress, IPNetwork
 
 JSONLOG = "cowrie.json.2019-07-04"
 CITY_LOCATIONS_CSV = "GeoLite2-City-Locations-en.csv"
-CITY_BLOCKS_CSV = "GeoLite2-City-Blocks-IPv4.csv"
-ASN_BLOCKS_CSV = "GeoLite2-ASN-Blocks-IPv4.csv"
+GEOLITE2_CITY = "GeoLite2-City.mmdb"
+GEOLITE2_ASN = "GeoLite2-ASN.mmdb"
 
 COWRIE_LOG_DIR = "cowrie/"
 DB_FILE = "db.sqlite"
