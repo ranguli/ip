@@ -3,7 +3,7 @@ import os
 
 from netaddr import IPAddress, IPNetwork
 
-
+JSONLOG = "cowrie.json.2019-07-04"
 CITY_LOCATIONS_CSV = "GeoLite2-City-Locations-en.csv"
 CITY_BLOCKS_CSV = "GeoLite2-City-Blocks-IPv4.csv"
 ASN_BLOCKS_CSV = "GeoLite2-ASN-Blocks-IPv4.csv"
@@ -28,9 +28,7 @@ def chunk(jsonlog, chunk_count):
     chunks = [] 
     
     length = log_length(jsonlog)
-    print(length)
     chunk_size = length // chunk_count
-    print(chunk_size)
 
     with open(jsonlog) as f:
         i = 0 
@@ -58,7 +56,7 @@ def get_session_ids(logs):
                     sessions[session] = "" 
     return sessions
 
-def geolocate(c, ip):
+def geolocate(conn, ip):
     """ Queries the GeoLite2 table in SQLite for information on
         an IP address.
     """
@@ -66,19 +64,18 @@ def geolocate(c, ip):
     cache = {} 
 
     c = conn.cursor()
-    query = c.execute('SELECT * FROM geolocation') 
+
+    first_octet = ip.split(".")[0]
+    # Select all IP ranges that start with the first octet of our IP
+    query = c.execute("SELECT * FROM geolocation WHERE ip_range LIKE '" + first_octet +"%'")
    
-    print(cache.get(ip))
     if cache.get(ip):
-        print("got it from catch")
         return cache.get(ip)
    
     for result in query:
         if IPAddress(ip) in IPNetwork(result[0]):
-            print("got it")
             if result not in cache:
                 cache[ip] = result
-                print(result)
             return(result)
             break
 

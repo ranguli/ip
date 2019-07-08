@@ -112,17 +112,18 @@ def import_geolite2(conn):
                                                   region_name,city_name,asn,time_zone,postal_code,latitude,longitude,accuracy) 
                                                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) """ 
                         c.execute(insertion_statement, result)
-                    
                     results = []
                     i = 0
 
-def process_log(conn, jsonlogfile):
+def process_log(conn, jsonlog):
+    print("Processing logfile")
     c = conn.cursor()
     
     count = 0
     results = []
     
     with open(jsonlog) as workload:
+        c.execute("BEGIN TRANSACTION")
 
         for line in tqdm(workload):
             record = json.loads(line)
@@ -132,9 +133,7 @@ def process_log(conn, jsonlogfile):
                 session = record.get('session')
                 src_ip = record.get('src_ip')
                 timestamp = record.get('timestamp')
-                print("about to geolocated")
-                geolocation = geolocate(c, src_ip)
-                print(geolocation)
+                geolocation = common.geolocate(conn, src_ip)
                 result = [session, src_ip, timestamp, event_id]
                 results.append(result)
                         
@@ -146,9 +145,10 @@ def process_log(conn, jsonlogfile):
                 count += 1 
                 if count == 5000:
                     conn.commit()
-                    print("commited")
                     count = 0
                     results = []
+        
+    c.execute("END TRANSACTION")
 
     conn.commit()
     c.close()
@@ -173,14 +173,13 @@ if __name__ == '__main__':
 
     #logs = os.listdir(common.COWRIE_LOG_DIR)
     #sessions = common.get_session_ids(logs)
-    #conn = common.connect_db(common.DB_FILE)
+    conn = common.connect_db(common.DB_FILE)
     
-    #if args.init_db:
-    #    print("hello")
     common.init_db(conn)
-
-    #if args.import_geolite:
     import_geolite2(conn)
+    
+    process_log(conn, common.JSONLOG) 
+    
     # Get all unique session IDs, as a way to identify data across pools 
 
     conn.close()
