@@ -1,5 +1,12 @@
 import sqlite3
 import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+import json
+import pandas as pd
+import folium
 
 from netaddr import IPAddress, IPNetwork
 
@@ -73,7 +80,6 @@ def connect_db(db_file):
 
 def init_db(conn):
     """ Creates all the necessary database table"""
-
     create_table = """CREATE TABLE IF NOT EXISTS attack_log(
                              src_ip text,
                              asn text,
@@ -89,8 +95,8 @@ def init_db(conn):
                              postal_code text, 
                              continent_code text, 
                              continent_name text,
-                             latitude text, 
-                             longitude text,
+                             latitude real, 
+                             longitude real,
                              time_zone text, 
                              accuracy_radius int, 
                              event_id text

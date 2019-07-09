@@ -88,6 +88,7 @@ def process_log(conn, log_dir, jsonlog):
                     timestamps = None
 
                 elif exists == 0:
+                    attack_count = 1
                     seen.append(src_ip)
                     timestamp = record.get("timestamp") + ","
 
@@ -175,6 +176,7 @@ def process_log(conn, log_dir, jsonlog):
                         src_ip,
                         asn,
                         timestamp,
+                        attack_count,
                         country_code,
                         country_name,
                         subdivision_code,
@@ -192,13 +194,13 @@ def process_log(conn, log_dir, jsonlog):
                     new_entries.append(new_entry)
 
                     insertion_statement = """INSERT INTO attack_log(
-                                             src_ip,asn,timestamps,country_code,
+                                             src_ip,asn,timestamps,attack_count,country_code,
                                              country_name, subdivision_code,
                                              subdivision_name, city_name,
                                              postal_code, continent_code,
                                              continent_name, latitude, longitude,
                                              time_zone, accuracy_radius, event_id) 
-                                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+                                             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
 
                     c.execute(insertion_statement, new_entry)
         conn.commit()
