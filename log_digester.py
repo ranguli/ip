@@ -19,7 +19,7 @@ def process_log(conn, log_dir, jsonlog):
     new_entries = []
 
     geolite_city = maxminddb.open_database(common.GEOLITE2_CITY)
-    geolite_asn = maxminddb.open_database(common.GETOLITE2_ASN)
+    geolite_asn = maxminddb.open_database(common.GEOLITE2_ASN)
 
     with open(log_dir + jsonlog) as workload:
         seen = []
@@ -133,13 +133,13 @@ def process_log(conn, log_dir, jsonlog):
                         continue
 
                     try:
-                        continent_name = geolocation.get("continent").get("code")
+                        continent_name = geolocation.get("continent").get("names").get("en")
                     except AttributeError:
                         continue
 
                     try:
                         continent_code = (
-                            geolocation.get("continent").get("names").get("en")
+                            geolocation.get("continent").get("code")
                         )
                     except AttributeError:
                         continue
@@ -177,12 +177,12 @@ def process_log(conn, log_dir, jsonlog):
                         timestamp,
                         country_code,
                         country_name,
-                        subdivision_name,
                         subdivision_code,
+                        subdivision_name,
                         city_name,
                         postal_code,
-                        continent_name,
                         continent_code,
+                        continent_name,
                         latitude,
                         longitude,
                         time_zone,
@@ -193,10 +193,10 @@ def process_log(conn, log_dir, jsonlog):
 
                     insertion_statement = """INSERT INTO attack_log(
                                              src_ip,asn,timestamps,country_code,
-                                             country_name, subdivision_name,
-                                             subdivision_code, city_name,
-                                             postal_code, continent_name,
-                                             continent_code, latitude, longitude,
+                                             country_name, subdivision_code,
+                                             subdivision_name, city_name,
+                                             postal_code, continent_code,
+                                             continent_name, latitude, longitude,
                                              time_zone, accuracy_radius, event_id) 
                                              VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
 
@@ -239,7 +239,7 @@ if __name__ == "__main__":
     for index, log in enumerate(logs):
         index += 1
         print(
-            "(" + str(index) + str(len(logs)) + ") Processing logfile " + log + " ..."
+            "(" + str(index) + "/" + str(len(logs)) + ") Processing logfile " + log + " ..."
         )
         process_log(conn, common.COWRIE_LOG_DIR, log)
 
