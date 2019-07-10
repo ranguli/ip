@@ -20,6 +20,11 @@
   `libgeos-dev`, `libgdal-dev`, `libproj-dev`
 - For Python requirements see `requirements.txt`
 
+## Usage
+- Create a virtualenv with `requirements.txt` packages installed
+- Run `python log_digester.py`, which will use the sample data provided in the repo
+- Run `jupyter notebook` to view the data visualizations
+
 ## To-Do:
 - Extract and analyze data based on timeframes
   - Get the number of attacks/day, attacks/month, etc 
