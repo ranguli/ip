@@ -1,5 +1,14 @@
 # ip
-![screenshot2](screenshot2.png)
+![](screen4.png)
+
+_Geographical visualization of attacker data_
+
+![](screenshot.png)
+
+_Sample of the SQLite database contents_
+
+![](screen3.png)
+_Example chart visualization in the included Jupyter notebook_
 
 ## Features:
 - Parses Cowrie honeypot JSON logs into SQLite at `20,000+
