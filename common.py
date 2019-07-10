@@ -79,11 +79,10 @@ def connect_db(db_file):
 
 
 def init_db(conn):
-    """ Creates all the necessary database table"""
-    create_table = """CREATE TABLE IF NOT EXISTS attack_log(
+    """ Creates all the necessary database table """
+    attacker_profiles = """ CREATE TABLE IF NOT EXISTS attacker_profiles(
                              src_ip text,
                              asn text,
-                             timestamps text,
                              first_seen text,
                              last_seen text,
                              attack_count int,
@@ -102,6 +101,13 @@ def init_db(conn):
                              event_id text
                             );"""
 
+    attack_log = """CREATE TABLE IF NOT EXISTS attack_log(
+                            src_ip text,
+                            timestamp text,
+                            event_id text,
+                            attributes text
+                            );"""
     c = conn.cursor()
-    c.execute(create_table)
+    c.execute(attack_log)
+    c.execute(attacker_profiles)
     conn.commit()
