@@ -200,6 +200,32 @@ def profile_attackers(conn):
             c.execute(insertion_statement, new_entry)
     conn.commit()
 
+def country_stats(conn):
+    c = conn.cursor()
+
+    table = "CREATE TABLE IF NOT EXISTS country_stats(country_name text, attack_count int)"
+    c.execute(table)
+    countries_query = c.execute("SELECT country_name FROM attacker_profiles").fetchall()
+    countries = []
+    for country_query in countries_query:
+        if country_query[0] not in countries:
+            countries.append(country_query[0])
+
+    entries = [] 
+    seen = []
+
+    for country in countries:
+        query = "SELECT * FROM attacker_profiles WHERE country_name=\'" + country + "\'"
+        country_results = c.execute(query).fetchall()
+
+        attack_count_sum = []
+        for row in country_results:
+            attack_count_sum.append(row[4])
+        
+        attack_count = sum(attack_count_sum) 
+        c.execute("INSERT INTO country_stats(country_name, attack_count) VALUES(?,?)", [country, attack_count])
+        conn.commit()
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="ip")
@@ -229,16 +255,17 @@ if __name__ == "__main__":
     print("Connected ...")
 
     print("Initializing tables ...")
-    common.init_db(conn)
+    #common.init_db(conn)
 
-    logs = os.listdir(common.COWRIE_LOG_DIR)
-    for index, log in enumerate(logs):
-        index += 1
-        print(
-            "(" + str(index) + "/" + str(len(logs)) + ") Processing logfile " + log + " ..."
-        )
-        process_log(conn, common.COWRIE_LOG_DIR, log)
+    #logs = os.listdir(common.COWRIE_LOG_DIR)
+    #for index, log in enumerate(logs):
+    #    index += 1
+    #    print(
+    #        "(" + str(index) + "/" + str(len(logs)) + ") Processing logfile " + log + " ..."
+    #    )
+    #    process_log(conn, common.COWRIE_LOG_DIR, log)
     
-    profile_attackers(conn)
+    #profile_attackers(conn)
+    country_stats(conn)
         
     conn.close()
