@@ -1,4 +1,4 @@
-# I.P: (the) Internet (is) Probably (being attacked)
+# ip: (the) i(nternet is) p(robably down)
 ![](screen4.png)
 
 _Geographical visualization of attacker data_
