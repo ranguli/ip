@@ -24,6 +24,10 @@ _Example chart visualization in the included Jupyter notebook_
 - Exposes all SQLite data as a Pandas/GeoPandas dataframe, which can be directly manipulated and visualized in the included Jupyter Notebook
 - Low memory consumption 
 
+## Structural Overview
+![](structural_overview.png)
+
+
 ## Requirements
 - System packages:
   `libgeos-dev`, `libgdal-dev`, `libproj-dev`
