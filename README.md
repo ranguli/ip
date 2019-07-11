@@ -59,6 +59,7 @@ simple 'tar zcvf' I was able to achieve better results:
   - [Article](https://medium.com/@ikod/custom-exporter-with-prometheus-b1c23cb24e7a)
   - [Example](https://github.com/MUNComputerScienceSociety/Automata/blob/master/plugins/Analytics/__init__.py)
   - [Article 2](https://www.robustperception.io/productive-prometheus-python-parsing)
+  - [Article 3](https://www.robustperception.io/writing-a-jenkins-exporter-in-python)
   
 - Extract and analyze data based on timeframes
   - Get the number of attacks/day, attacks/month, etc 
