@@ -55,6 +55,11 @@ simple 'tar zcvf' I was able to achieve better results:
 - Run `jupyter notebook` to view the data visualizations
 
 ## To-Do:
+- Write a Prometheus exporter
+  - [Article](https://medium.com/@ikod/custom-exporter-with-prometheus-b1c23cb24e7a)
+  - [Example](https://github.com/MUNComputerScienceSociety/Automata/blob/master/plugins/Analytics/__init__.py)
+  - [Article 2](https://www.robustperception.io/productive-prometheus-python-parsing)
+  
 - Extract and analyze data based on timeframes
   - Get the number of attacks/day, attacks/month, etc 
     - How do we determine the number of attacks for a given day?
