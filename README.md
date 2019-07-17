@@ -9,8 +9,9 @@ _Geographical visualization of attacker data_
 
 _Sample of the SQLite database contents_
 
-![](screen3.png)
-_Example chart visualization in the included Jupyter notebook_
+![](screenshot3.png)
+
+_Bubble map of attackers based on continent_
 
 ## Features:
 - Ingests Cowrie honeypot JSON logs into SQLite at `100,000+
