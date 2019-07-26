@@ -28,6 +28,11 @@ _Bubble map of attackers based on continent_
 - Exposes all SQLite data as a Pandas/GeoPandas dataframe, which can be directly manipulated and visualized in the included Jupyter Notebook
 - Low memory consumption 
 
+## Installation
+- Clone the GitHub repository with `git clone https://github.com/ranguli/ip`
+- Within the project root, run `python install -r requirements.txt`, preferably in a python venv.
+- Run `log_digester.py` on the sample data.
+
 ## Structural Overview
 ![](structural_overview.png)
 
