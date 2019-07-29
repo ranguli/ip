@@ -31,11 +31,17 @@ _Bubble map of attackers based on continent_
 ## Installation
 - Clone the GitHub repository with `git clone https://github.com/ranguli/ip`
 - Within the project root, run `python install -r requirements.txt`, preferably in a python venv.
-- Run `log_digester.py` on the sample data.
+
+## Usage
+- Run `log_digester.py`. This will do the following:
+  - Create the sqlite schema, including views, necessary for storing the converted data
+  - Perform Geolocation on IP addresses
+  - Create a SQLite view 'wordlist' - containing the attackers credentials. Export wordlist to `.txt` option TBD.
+  - Create a profile of each individual attacker, including number of attacks
+  - Create a profile of each city and each country, including number of attacks
 
 ## Structural Overview
 ![](structural_overview.png)
-
 
 ## Requirements
 - System packages:
