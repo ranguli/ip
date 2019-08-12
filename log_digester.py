@@ -4,22 +4,21 @@ from netaddr import IPNetwork, IPAddress
 from tqdm import tqdm
 import maxminddb
 import iso3166
+import csv
 
 import sqlite3
 import argparse
-import json
 import os
-import base64
 
 SCHEMA_FILE = "create_schema.sql"
 VIEWS_FILE = "create_views.sql"
 
-JSONLOG = "cowrie.json.2019-07-04"
+CSVLOG = "AllTraffic_1.sample.csv"
 CITY_LOCATIONS_CSV = "GeoLite2-City-Locations-en.csv"
 GEOLITE2_CITY = "GeoLite2-City.mmdb"
 GEOLITE2_ASN = "GeoLite2-ASN.mmdb"
 
-COWRIE_LOG_DIR = "cowrie/"
+LOG_DIR = "./cowrie/"
 DB_FILE = "db.sqlite"
 
 geolocation_db = maxminddb.open_database(GEOLITE2_CITY)
@@ -49,7 +48,7 @@ def create_views(conn, VIEWS_FILE):
             c.execute(command)
     conn.commit()
 
-def geolocate(src_ip):
+def geolocate(source_ip):
     
     geolocation_results  = []
     geolocation_query = [
@@ -58,18 +57,13 @@ def geolocate(src_ip):
         ["subdivisions", 0, "names", "en"],
         ["subdivisions", 0, "iso_code"],
         ["city", "names", "en"],
-        ["postal", "code"],
-        ["continent", "names", "en"],
-        ["continent", "code"],
         ["location", "latitude"],
-        ["location", "longitude"],
-        ["location", "time_zone"],
-        ["location", "accuracy_radius"],
+        ["location", "longitude"]
     ]
 
     for geolocation_attribute in geolocation_query:
         try:
-            result = geolocation_db.get(src_ip).get(geolocation_attribute.pop(0))
+            result = geolocation_db.get(source_ip).get(geolocation_attribute.pop(0))
             for key in geolocation_attribute:
                 if isinstance(key, int):
                     result = result[key]
@@ -90,7 +84,7 @@ def geolocate(src_ip):
     geolocation_results.insert(1, country_code_alpha3)
     return geolocation_results
 
-def process_log(conn, log_directory, jsonlog):
+def process_log(conn, log_directory, log):
     c = conn.cursor()
 
     # The MaxMind Database files for performing geolocation on an IP address,
@@ -101,108 +95,52 @@ def process_log(conn, log_directory, jsonlog):
     # Cache IPs after we geolocate them to greatly increase processing speed
     geolocated_ip_addresses = {} 
 
-    with open(log_directory + jsonlog) as logfile:
+    with open(log_directory + log) as logfile:
         c.execute("BEGIN TRANSACTION")
-        for line in tqdm(logfile):
-            log_entry = json.loads(line)
-
-            # Event IDs are identifiers that Cowrie uses to signify what 
-            # type of action an attacker is doing on a honeypot.
-            event_id = log_entry.get("eventid")
+        reader = csv.DictReader(logfile, delimiter="\t")
+        for row in tqdm(reader):
             
-            if (
-                event_id == "cowrie.login.success"
-                or event_id == "cowrie.login.failed"
-                or event_id == "cowrie.command.input"
-            ):
-                if event_id == "cowrie.command.input":
-                    attempted_username = "" 
-                    attempted_password = "" 
-                    command = log_entry.get("message")
-                else: 
-                    attempted_username = log_entry.get("username")
-                    attempted_password = log_entry.get("password")
-                    command = None 
+            source_ip = row.get("source_ip")
+            entry = [source_ip]
 
-                src_ip = log_entry.get("src_ip")
-                event_timestamp = log_entry.get("timestamp")
-                credential_signature = base64.b64encode(
-                        attempted_username.encode() + attempted_password.encode()
-                )
-                
-                isp_name = isp_geolocation_db.get(src_ip).get("autonomous_system_organization")
+            if source_ip not in geolocated_ip_addresses.keys():
+                geolocation_results = geolocate(source_ip)
+                geolocated_ip_addresses[source_ip] = geolocation_results
 
-                entry = [
-                    src_ip, 
-                    isp_name, 
-                    event_timestamp, 
-                    event_id, 
-                    attempted_username, 
-                    attempted_password,
-                    credential_signature,
-                    command
-                ]
+            elif source_ip in geolocated_ip_addresses.keys():
+                geolocation_results = geolocated_ip_addresses[source_ip] 
 
-                if src_ip not in geolocated_ip_addresses.keys():
-                    geolocation_results = geolocate(src_ip)
-                    geolocated_ip_addresses[src_ip] = geolocation_results
+            entry.extend(geolocation_results)
+            insertion_statement = """ INSERT INTO attack_log(
+                                         source_ip,
+                                         country_code, 
+                                         country_code_alpha3,
+                                         country_name, 
+                                         subdivision_code, 
+                                         subdivision_name, 
+                                         city_name, 
+                                         latitude, 
+                                         longitude
+                                         )
+                                     VALUES(?,?,?,?,?,?,?,?,?)
+                                """
 
-                elif src_ip in geolocated_ip_addresses.keys():
-                    geolocation_results = geolocated_ip_addresses[src_ip] 
-
-                entry.extend(geolocation_results)
-                insertion_statement = """ INSERT INTO attack_log(
-                                             src_ip,
-                                             isp_name,
-                                             event_timestamp,
-                                             event_id,
-                                             attempted_username,
-                                             attempted_password,
-                                             credential_signature,
-                                             command,
-                                             country_code, 
-                                             country_code_alpha3,
-                                             country_name, 
-                                             subdivision_code, 
-                                             subdivision_name, 
-                                             city_name, 
-                                             postal_code, 
-                                             continent_code,
-                                             continent_name, 
-                                             latitude, 
-                                             longitude,
-                                             time_zone, 
-                                             accuracy_radius)
-                                         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                                    """
-
-                entries.append(entry)
+            entries.append(entry)
         for entry in entries:
             c.execute(insertion_statement, entry)
         c.execute("END TRANSACTION")
         conn.commit()
 
-def log_length(log):
-    """ Gets the length of a logfile """
-    i = 0
-    with open(jsonlog) as f:
-        for line in f:
-            i += 1
-
-    f.close()
-    return i
-
-
-def chunk(jsonlog, chunk_count):
+def chunk(log, chunk_count):
     """ Divides a file into equal sized chunks. 
         Useful for dividing logs up for multiprocessing 
     """
     chunks = []
 
-    length = log_length(jsonlog)
+    length = log_length(log)
     chunk_size = length // chunk_count
 
-    with open(jsonlog) as f:
+    with open(log) as f:
         i = 0
         chunk = 0
         for line in f:
@@ -216,7 +154,9 @@ def chunk(jsonlog, chunk_count):
     return chunks
 
 if __name__ == "__main__":
-
+    conn = connect_db(DB_FILE)
+    create_views(conn, VIEWS_FILE)
+    exit()
     parser = argparse.ArgumentParser(description="ip")
     parser.add_argument(
         "--log-dir",
@@ -231,7 +171,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.log_directory is None:
-        print("Assuming default log directory: " + COWRIE_LOG_DIR)
+        print("Assuming default log directory: " + LOG_DIR)
     else:
         COWIRE_LOG_DIR = args.log_directory
         print("Using log directory: " + "".join(args.log_directory))
@@ -244,7 +184,7 @@ if __name__ == "__main__":
     create_schema(conn, SCHEMA_FILE)
 
     if not args.no_processing:
-        logs = os.listdir(COWRIE_LOG_DIR)
+        logs = os.listdir(LOG_DIR)
         for index, log in enumerate(logs):
             index += 1
             print(
@@ -256,7 +196,7 @@ if __name__ == "__main__":
                 + log
                 + " ..."
             )
-            process_log(conn, COWRIE_LOG_DIR, log)
+            process_log(conn, LOG_DIR, log)
     print("Creating views ...")
     create_views(conn, VIEWS_FILE)
 
