@@ -30,7 +30,13 @@ _Bubble map of attackers based on continent_
 
 ## Installation
 - Clone the GitHub repository with `git clone https://github.com/ranguli/ip`
+- Install the prerequisite packagess for your OS listed below.
 - Within the project root, run `python install -r requirements.txt`, preferably in a python venv.
+
+### Prerequisites
+
+#### Debian-based systems
+```sudo apt install libpython3-dev proj-bin libgeos-dev libproj-dev```
 
 ## Usage
 - Run `log_digester.py`. This will do the following:
