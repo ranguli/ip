@@ -1,6 +1,3 @@
-CREATE VIEW dates 
-AS
-  SELECT event_timestamp, count(event_timestamp) as attack_count 
-  FROM attack_log 
-  GROUP BY event_timestamp;
+CREATE VIEW usernames AS SELECT username, count(username) as occurences FROM attack_log GROUP BY username ORDER BY occurences DESC;
 
+CREATE VIEW passwords AS SELECT password, count(password) as occurences FROM attack_log GROUP BY password ORDER BY occurences DESC;

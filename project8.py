@@ -2,10 +2,9 @@
 
 from netaddr import IPNetwork, IPAddress
 from tqdm import tqdm
-import maxminddb
-import iso3166
-import csv
 
+import csv
+import ast
 import sqlite3
 import argparse
 import os
@@ -44,22 +43,24 @@ def create_views(conn, VIEWS_FILE):
     conn.commit()
 
 def process_log(conn, log_directory, log):
-    c = conn.cursor()
+    
     entries = []
-
+    insertion_statement = """ INSERT INTO attack_log(
+                                 username,
+                                 password
+                                 )
+                             VALUES(?,?)
+                        """
     with open(log_directory + log) as logfile:
+        c = conn.cursor()
         c.execute("BEGIN TRANSACTION")
         reader = csv.DictReader(logfile, delimiter="\t")
         for row in tqdm(reader):
-            event_timestamp = row.get("timestamp").split(" ")[0]
-            entry = [event_timestamp]
-            insertion_statement = """ INSERT INTO attack_log(
-                                         event_timestamp
-                                         )
-                                     VALUES(?)
-                                """
-
-            entries.append(entry)
+            credentials = ast.literal_eval(row.get("credentials"))
+            for element in credentials:
+                username, password = element
+                entry = username, password
+                entries.append(entry)
         for entry in entries:
             c.execute(insertion_statement, entry)
         c.execute("END TRANSACTION")
