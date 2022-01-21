@@ -4,7 +4,7 @@ Cartopy==0.17.0
 descartes==1.1.0
 geopandas==0.5.0
 geoplot==0.3.0
-ipython==7.6.1
+ipython==7.16.3
 jupyter==1.0.0
 matplotlib==3.1.1
 maxminddb==1.4.1
