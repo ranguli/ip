@@ -9,7 +9,7 @@ jupyter==1.0.0
 matplotlib==3.1.1
 maxminddb==1.4.1
 netaddr==0.7.19
-notebook==5.7.8
+notebook==6.4.12
 numpy==1.16.4
 pandas==0.24.2
 Pillow==6.2.0
